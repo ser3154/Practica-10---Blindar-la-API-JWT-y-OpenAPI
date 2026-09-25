@@ -4,67 +4,66 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generado/prisma"
-  moduleformat = "cjs"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "mysql"
 }
 
-model Clase{
-  id      Int @id @default(autoincrement())
-  nombre  String @db.VarChar(80)
-  descripcion String @db.VarChar(255)
+model Clase {
+  id       Int       @id @default(autoincrement())
+  nombre   String    @db.VarChar(80)
   horarios Horario[]
 
   @@map("clases")
 }
 
-model Horario{
-  id            Int@id @default(autoincrement())
+model Horario {
+  id            Int    @id @default(autoincrement())
   claseId       Int
   dia           String @db.VarChar(20)
   horaInicio    String @db.VarChar(5)
   cupoMaximo    Int
   entrenador    String @db.VarChar(80)
 
-  clase Clase @relation(fields: [claseId], references: [id], onDelete: Cascade)
+  clase         Clase         @relation(fields: [claseId], references: [id], onDelete: Cascade)
   inscripciones Inscripcion[]
 
   @@index([claseId])
   @@map("horarios")
 }
 
+model Miembro {
+  id            Int     @id @default(autoincrement())
+  nombre        String  @db.VarChar(100)
+  correo        String  @unique @db.VarChar(150)
+  membresia     String  @db.VarChar(20)
+  activo        Boolean @default(true)
 
-model Miembro{
-  id        Int @id @default(autoincrement())
-  nombre    String @db.VarChar(100)
-  correo    String @unique @db.VarChar(150)
-  membresia String @unique @db.VarChar(20)
-  activo    Boolean @default(true)
   inscripciones Inscripcion[]
 
   @@map("miembros")
 }
 
-enum EstadoInscripcion{
-  confirmado
-  cancelado
+enum EstadoInscripcion {
+  confirmada
+  cancelada
 }
 
-model Inscripcion{
-  id        Int @id @default(autoincrement())
-  horarioId Int 
+model Inscripcion {
+  id        Int               @id @default(autoincrement())
+  horarioId Int
   miembroId Int
-  estado    EstadoInscripcion @default(confirmado)
-  crearEn   DateTime @default(now())
+  estado    EstadoInscripcion @default(confirmada)
+  creadaEn  DateTime          @default(now())
 
   horario   Horario @relation(fields: [horarioId], references: [id], onDelete: Cascade)
   miembro   Miembro @relation(fields: [miembroId], references: [id], onDelete: Cascade)
 
-  @@unique([horarioId, miembroId])
+  @@index([horarioId])
   @@index([miembroId])
   @@map("inscripciones")
 }
