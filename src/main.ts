@@ -1,33 +1,38 @@
-import 'dotenv/config';
-import { NestFactory } from '@nestjs/core';
+import 'dotenv/config'; 
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { ErrorDominioFilter } from './comun/filtros/error.dominio.filtrer';
+import { DominioExceptionFilter } from './comun/filtros/dominio.filter';
+import { LoggingInterceptor } from './comun/interceptores/logging.interceptor';
+import { SobreInterceptor } from './comun/interceptores/sobre.interceptor';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use((req, res, next) => {
-    res.setHeader('X-Request-Id', randomUUID());
-    next();
-  });
+  // Tu useGlobalPipes actual (déjalo como lo tienes)
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+
+  app.useGlobalFilters(new DominioExceptionFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor(), new SobreInterceptor());
+
+  const reflector = app.get(Reflector);
+  app.useGlobalGuards(new JwtAuthGuard(reflector));
 
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:4200'],
+    origin: ['http://localhost:5173'],
     exposedHeaders: ['Location', 'X-Request-Id'],
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
-
-  app.useGlobalFilters(new ErrorDominioFilter());
+  const config = new DocumentBuilder()
+    .setTitle('API del Gimnasio')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .addSecurityRequirements('bearer')
+    .build();
+  const documento = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, documento);
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -11,6 +11,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       user: process.env.DB_USER ?? 'root',
       password: process.env.DB_PASSWORD ?? '',
       database: process.env.DB_NAME ?? 'gimnasio',
+      allowPublicKeyRetrieval: true, 
     });
     super({ adapter });
   }
